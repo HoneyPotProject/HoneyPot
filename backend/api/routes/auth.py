@@ -37,7 +37,7 @@ class SignupIn(BaseModel):
 
 
 class LoginIn(BaseModel):
-    username: str = Field(min_length=1, max_length=100)
+    email: str = Field(min_length=1, max_length=100)
     password: str = Field(min_length=1, max_length=200)
 
 
@@ -122,31 +122,30 @@ async def login(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
-    user = await UserRepository.get_by_username(
+    user = await UserRepository.get_by_email(
         db,
-        payload.username,
+        payload.email.strip().lower(),
     )
 
     authenticated = False
 
     if user is not None:
-        # Authenticate database-backed accounts.
+        # Verify the submitted password against the stored password hash.
         authenticated = verify_password(
             payload.password,
             user.password_hash,
         )
-
     else:
-        # Preserve existing configured administrator credentials.
+        # Preserve configured administrator credentials.
         authenticated = authenticate_credentials(
-            payload.username,
+            payload.email,
             payload.password,
         )
 
     if not authenticated:
         await SourceRepository.write_audit(
             db,
-            actor=payload.username,
+            actor=payload.email,
             action='login_failed',
             source_ip=request.client.host if request.client else None,
         )
@@ -156,20 +155,22 @@ async def login(
             detail='Invalid credentials',
         )
 
-    set_session_cookie(response, payload.username)
+    # Use the authenticated database account's username.
+    username = user.username if user is not None else settings.ADMIN_USERNAME
+
+    set_session_cookie(response, username)
 
     await SourceRepository.write_audit(
         db,
-        actor=payload.username,
+        actor=username,
         action='login_success',
         source_ip=request.client.host if request.client else None,
     )
 
     return {
         'status': 'ok',
-        'username': payload.username,
+        'username': username,
     }
-
 
 @router.post('/api/auth/logout', tags=['Auth'])
 async def logout(

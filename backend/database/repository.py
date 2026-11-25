@@ -21,14 +21,14 @@ logger = logging.getLogger(__name__)
 class UserRepository:
 
     @staticmethod
-    async def get_by_username(
+    async def get_by_email(
         session: AsyncSession,
-        username: str,
+        email: str,
     ) -> Optional[UserModel]:
 
         result = await session.execute(
             select(UserModel).where(
-                UserModel.username == username
+                UserModel.email == email
             )
         )
 

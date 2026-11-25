@@ -1,0 +1,1 @@
+# Abstract BaseDetector with name, category and analyze(ctx) -> list[DetectionResult]. All detectors inherit it, so adding a new one means adding a file and registering it.

@@ -1,0 +1,1 @@
+#All compiled regexes and path lists, grouped by category. Detectors import from here, so you can tune rules without touching detector logic.

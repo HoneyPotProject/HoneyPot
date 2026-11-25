@@ -1,0 +1,1 @@
+#An abstract EventSink with save(event). The backend provides the SQLite implementation and tests provide an in-memory one.

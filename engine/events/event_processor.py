@@ -1,0 +1,1 @@
+#Merges detector results and analyzer output into one normalized SecurityEvent, generates the UUID, picks the final category and severity, and passes the event to the sink. This is the only place where classification happens.

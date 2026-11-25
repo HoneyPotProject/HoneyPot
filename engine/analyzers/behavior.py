@@ -1,0 +1,1 @@
+#Correlates events per source IP over time: repeated categories, multiple attack types, sequential scanning. Produces a behavioral score.

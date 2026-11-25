@@ -1,0 +1,1 @@
+#Defines SecurityEvent: event ID, IP, timestamp, category, severity, confidence, reasons, evidence, target, method, path, related results.

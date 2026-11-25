@@ -1,0 +1,1 @@
+#Finds shell separators (;, &&, |, backticks, $()) combined with command-like words. Never executes anything.

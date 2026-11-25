@@ -1,0 +1,1 @@
+#Finds ../, ..\, and single, double and unicode-encoded forms. Normalizes paths before matching.

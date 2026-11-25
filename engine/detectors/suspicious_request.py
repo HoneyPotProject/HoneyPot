@@ -1,0 +1,1 @@
+#Flags malformed requests, missing or odd headers, oversized headers and unusual methods. Uses low confidence, since headers alone prove little.

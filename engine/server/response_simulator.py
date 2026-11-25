@@ -1,0 +1,1 @@
+#Returns fake responses: a fake login page, fake 403/404, and a fake /admin. It never reads host files or runs input.

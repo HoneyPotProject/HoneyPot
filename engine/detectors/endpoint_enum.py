@@ -1,0 +1,1 @@
+#Flags one IP requesting many distinct paths, or many 404s, in a time window. Stateful, using a per-IP deque with a size cap.

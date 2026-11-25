@@ -1,0 +1,1 @@
+#Engine settings: body size limit, time windows, thresholds, redaction list. Using one place means you won't scatter magic numbers through the detectors.

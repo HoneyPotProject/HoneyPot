@@ -1,0 +1,1 @@
+#Parses the raw request, calls the collector, runs the engine, passes results to the processor, then asks the simulator for a response.

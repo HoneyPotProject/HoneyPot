@@ -1,0 +1,1 @@
+# Turns raw HTTP data into a RequestContext. It validates the IP with ipaddress, parses the URL and query string, URL-decodes values, truncates the body to the size limit, and redacts Authorization, Cookie and password fields.

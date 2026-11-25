@@ -1,0 +1,1 @@
+#Counts login attempts per IP in a sliding window against the fake login endpoint and flags when a threshold is crossed. Stateful.

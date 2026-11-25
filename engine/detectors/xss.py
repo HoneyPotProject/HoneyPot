@@ -1,0 +1,1 @@
+#Matches <script>, event-handler attributes, javascript: URLs and encoded variants.

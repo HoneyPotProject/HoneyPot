@@ -1,0 +1,1 @@
+# Defines RequestContext, a frozen dataclass with source IP, method, path, query params, headers, size-limited body, timestamp and request ID. Every detector receives only this object.

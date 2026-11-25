@@ -1,0 +1,1 @@
+#Estimates automation likelihood from request timing, rate, and regularity. User-Agent is a weak hint only.

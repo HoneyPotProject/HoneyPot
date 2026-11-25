@@ -1,0 +1,1 @@
+#Flags requests to sensitive paths such as /.env, /.git/config, /wp-admin, /phpmyadmin and /backup.zip. Stateless.

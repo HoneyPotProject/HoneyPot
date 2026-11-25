@@ -1,0 +1,1 @@
+#Groups requests into sessions (IP plus time gap, and cookie if present) and tracks per-session activity.

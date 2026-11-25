@@ -1,0 +1,1 @@
+#DetectionEngine. Registers detectors, runs them on each RequestContext, wraps each in try/except so one crash never stops the others, and returns the list of results.

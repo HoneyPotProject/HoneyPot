@@ -1,0 +1,8 @@
+# Project metadata and tool config (pytest, ruff). Keep requirements.txt too if you prefer it simple.
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100

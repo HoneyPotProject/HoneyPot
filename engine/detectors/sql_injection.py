@@ -1,0 +1,1 @@
+#Decodes input repeatedly, then matches SQL patterns (UNION SELECT, OR 1=1, comments, stacked queries). Reports "suspicious pattern", never "successful injection".

@@ -75,3 +75,17 @@ async def get_attacker_events(
             'method': r.method,
         })
     return {'events': events, 'total': total, 'page': page, 'page_size': page_size}
+
+
+@router.get('/api/attackers/{source_ip}/timeline', tags=['Sources'])
+async def get_attacker_timeline(
+    source_ip: str,
+    hours: int = Query(24, ge=1, le=168),
+    db: AsyncSession = Depends(get_db),
+    _auth=Depends(require_auth),
+):
+    row = await SourceRepository.get_by_ip(db, source_ip)
+    if not row:
+        raise HTTPException(status_code=404, detail='Source IP not found')
+    data = await EventRepository.timeline(db, hours=hours, source_ip=source_ip)
+    return {'source_ip': source_ip, 'timeline': data}

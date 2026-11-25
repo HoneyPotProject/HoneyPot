@@ -2,40 +2,33 @@
 # Creates the app, registers routers, sets CORS,
 # and starts the engine + honeypot as background tasks.
 
-import asyncio
 import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.api.routes import attackers, auth, detectors, events, health, statistics, system
+from backend.api.websockets import events as ws_events
 from backend.config import settings
-from backend.database.connection import init_db, AsyncSessionLocal
+from backend.database.connection import AsyncSessionLocal, init_db
 from backend.integration.engine_adapter import EngineAdapter
-
-# --- Engine imports ---
-# These are the ONLY engine modules the backend imports directly.
-# The engine never imports from the backend.
-from engine.core.engine import DetectionEngine
-from engine.core.config import DEFAULT_CONFIG
+from backend.middleware.rate_limit import RateLimitMiddleware
 from engine.collectors.request_collector import RequestCollector
-from engine.events.event_processor import EventProcessor
-from engine.server.request_handler import RequestHandler
-from engine.server.http_server import HoneypotHTTPServer
-
-# --- Detector imports ---
-from engine.detectors.sql_injection import SQLInjectionDetector
-from engine.detectors.xss import XSSDetector
-from engine.detectors.path_traversal import PathTraversalDetector
+from engine.core.config import DEFAULT_CONFIG
+from engine.core.engine import DetectionEngine
+from engine.detectors.brute_force import BruteForceDetector
 from engine.detectors.command_injection import CommandInjectionDetector
 from engine.detectors.directory_enum import DirectoryEnumerationDetector
 from engine.detectors.endpoint_enum import EndpointEnumerationDetector
-from engine.detectors.brute_force import BruteForceDetector
+from engine.detectors.path_traversal import PathTraversalDetector
+from engine.detectors.sql_injection import SQLInjectionDetector
 from engine.detectors.suspicious_request import SuspiciousRequestDetector
-
-# --- Route imports ---
-from backend.api.routes import health, events, attackers, statistics, detectors, system
-from backend.api.websockets import events as ws_events
+from engine.detectors.xss import XSSDetector
+from engine.events.event_processor import EventProcessor
+from engine.network.connection_monitor import ConnectionMonitor
+from engine.server.http_server import HoneypotHTTPServer
+from engine.server.request_handler import RequestHandler
 
 logging.basicConfig(
     level=getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO),
@@ -43,52 +36,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Global singletons — created once at startup and shared across requests.
-# Routes that need these import them lazily (inside the route function)
-# to prevent circular imports at module level.
-# ---------------------------------------------------------------------------
-
-# The detection engine with all detectors registered.
 detection_engine = DetectionEngine()
-
-# The adapter that owns the in-memory queue and the worker task.
 engine_adapter = EngineAdapter(queue_size=settings.EVENT_QUEUE_SIZE)
-
-# Reference to the honeypot server (kept for clean shutdown).
-_honeypot_server: HoneypotHTTPServer = None
+_honeypot_server: HoneypotHTTPServer | None = None
+_connection_monitor: ConnectionMonitor | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Application startup and shutdown lifecycle.
-
-    Startup order:
-      1. Create database tables.
-      2. Start the EngineAdapter (queue + worker task).
-      3. Register all detectors.
-      4. Build the detection pipeline.
-      5. Start the honeypot HTTP listener on HONEYPOT_PORT.
-
-    Shutdown:
-      1. Stop the honeypot listener.
-      2. Stop the engine adapter (drain queue, cancel worker).
-    """
-    global _honeypot_server
+    global _honeypot_server, _connection_monitor
 
     logger.info('=== Honeypot Backend Starting ===')
-
-    # 1. Initialize the database (creates tables if they don't exist).
     await init_db()
-
-    # 2. Start the engine adapter: creates the bounded asyncio.Queue
-    #    and launches the worker task that drains it to the database.
-    #    Returns the BackendEventSink the EventProcessor will call.
     sink = engine_adapter.start(AsyncSessionLocal)
 
-    # 3. Register all detectors with the engine.
-    #    Order doesn't matter — they all run independently per request.
     detection_engine.register(SQLInjectionDetector())
     detection_engine.register(XSSDetector())
     detection_engine.register(PathTraversalDetector())
@@ -97,38 +58,36 @@ async def lifespan(app: FastAPI):
     detection_engine.register(EndpointEnumerationDetector())
     detection_engine.register(BruteForceDetector())
     detection_engine.register(SuspiciousRequestDetector())
-
     logger.info('Registered %d detectors', len(detection_engine.detectors))
 
-    # 4. Build the detection pipeline (dependency chain):
-    #    RequestCollector   — raw bytes -> RequestContext
-    #    RequestHandler     — wires collector + engine + processor + simulator
-    #    EventProcessor     — results -> SecurityEvent -> sink.save()
-    #    BackendEventSink   — sink.save() -> queue.put_nowait()
-    #    EventWorker        — queue.get() -> EventService -> DB + WS broadcast
     collector = RequestCollector(DEFAULT_CONFIG)
     processor = EventProcessor(sink)
     handler = RequestHandler(collector, detection_engine, processor)
 
-    # 5. Start the decoy HTTP listener.
-    _honeypot_server = HoneypotHTTPServer(handler, port=settings.HONEYPOT_PORT)
+    _honeypot_server = HoneypotHTTPServer(
+        handler,
+        host=settings.HONEYPOT_HOST,
+        port=settings.HONEYPOT_PORT,
+    )
     await _honeypot_server.start()
+    detection_engine.mark_running(True)
+
+    if settings.ENABLE_DECOY_PORTS:
+        _connection_monitor = ConnectionMonitor(processor, host=settings.HONEYPOT_HOST)
+        await _connection_monitor.start()
 
     logger.info('=== Backend Ready — Management API on port %d ===', settings.MANAGEMENT_PORT)
+    yield
 
-    yield  # FastAPI serves requests here.
-
-    # --- Shutdown ---
     logger.info('=== Honeypot Backend Shutting Down ===')
+    detection_engine.mark_running(False)
+    if _connection_monitor:
+        await _connection_monitor.stop()
     if _honeypot_server:
         await _honeypot_server.stop()
     await engine_adapter.stop()
     logger.info('=== Shutdown complete ===')
 
-
-# ---------------------------------------------------------------------------
-# Create the FastAPI application.
-# ---------------------------------------------------------------------------
 
 app = FastAPI(
     title='Honeypot Management API',
@@ -139,17 +98,17 @@ app = FastAPI(
     redoc_url='/api/redoc',
 )
 
-# CORS — allow the Vite dev server and configured origins to call the API.
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
+    allow_methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allow_headers=['Authorization', 'Content-Type', 'X-API-Key'],
 )
 
-# Register all API routes.
 app.include_router(health.router)
+app.include_router(auth.router)
 app.include_router(events.router)
 app.include_router(attackers.router)
 app.include_router(statistics.router)
@@ -162,7 +121,7 @@ if __name__ == '__main__':
     import uvicorn
     uvicorn.run(
         'backend.main:app',
-        host='127.0.0.1',
+        host=settings.MANAGEMENT_HOST,
         port=settings.MANAGEMENT_PORT,
         reload=False,
     )

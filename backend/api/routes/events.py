@@ -1,21 +1,26 @@
-# GET /api/events, GET /api/events/{event_id}, POST annotation.
+# GET /api/events, GET /api/events/{event_id}, export, annotations.
 
+import csv
+import io
 import json
 from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.dependencies import get_db, require_auth
-from backend.database.repository import EventRepository
 from backend.database.models import AnalystAnnotationModel
+from backend.database.repository import EventRepository
+from backend.schemas.event import AnnotationIn
 
 router = APIRouter()
 
+ALLOWED_STATUSES = {'new', 'under_review', 'reviewed', 'false_positive'}
+
 
 def _decode_event(row) -> dict:
-    """Decode JSON text columns back to Python objects before returning."""
     return {
         'event_id': row.event_id,
         'source_ip': row.source_ip,
@@ -44,16 +49,17 @@ async def list_events(
     start_time: Optional[datetime] = Query(None),
     end_time: Optional[datetime] = Query(None),
     search: Optional[str] = Query(None),
+    sort_by: str = Query('timestamp'),
+    sort_dir: str = Query('desc'),
     db: AsyncSession = Depends(get_db),
     _auth=Depends(require_auth),
 ):
-    """List security events with optional filtering and pagination."""
     rows, total = await EventRepository.list_events(
         db, page=page, page_size=page_size,
         source_ip=source_ip, severity=severity,
         attack_category=attack_category,
         start_time=start_time, end_time=end_time,
-        search=search,
+        search=search, sort_by=sort_by, sort_dir=sort_dir,
     )
     total_pages = (total + page_size - 1) // page_size if total > 0 else 0
     return {
@@ -65,38 +71,98 @@ async def list_events(
     }
 
 
+@router.get('/api/events/export', tags=['Events'])
+async def export_events(
+    source_ip: Optional[str] = Query(None),
+    severity: Optional[str] = Query(None),
+    attack_category: Optional[str] = Query(None),
+    start_time: Optional[datetime] = Query(None),
+    end_time: Optional[datetime] = Query(None),
+    search: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    _auth=Depends(require_auth),
+):
+    rows, _total = await EventRepository.list_events(
+        db, page=1, page_size=200,
+        source_ip=source_ip, severity=severity,
+        attack_category=attack_category,
+        start_time=start_time, end_time=end_time,
+        search=search,
+    )
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow([
+        'event_id', 'timestamp', 'source_ip', 'attack_category', 'severity',
+        'confidence', 'method', 'path', 'reasons',
+    ])
+    for row in rows:
+        writer.writerow([
+            row.event_id, row.timestamp, row.source_ip, row.attack_category,
+            row.severity, row.confidence, row.method, row.path, row.detection_reasons,
+        ])
+    buffer.seek(0)
+    return StreamingResponse(
+        iter([buffer.getvalue()]),
+        media_type='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=events.csv'},
+    )
+
+
 @router.get('/api/events/{event_id}', tags=['Events'])
 async def get_event(
     event_id: str,
     db: AsyncSession = Depends(get_db),
     _auth=Depends(require_auth),
 ):
-    """Get a single event by its UUID."""
     row = await EventRepository.get_by_event_id(db, event_id)
     if not row:
         raise HTTPException(status_code=404, detail='Event not found')
-    return _decode_event(row)
+    payload = _decode_event(row)
+    related = await EventRepository.related_events(db, row.source_ip, row.event_id)
+    payload['related_events'] = [
+        {
+            'event_id': r.event_id,
+            'timestamp': r.timestamp,
+            'attack_category': r.attack_category,
+            'severity': r.severity,
+            'path': r.path,
+        }
+        for r in related
+    ]
+    annotations = [
+        {
+            'id': a.id,
+            'status': a.status,
+            'notes': a.notes,
+            'analyst_id': a.analyst_id,
+            'created_at': a.created_at,
+            'updated_at': a.updated_at,
+        }
+        for a in (row.annotations or [])
+    ]
+    payload['annotations'] = annotations
+    payload['investigation_status'] = annotations[-1]['status'] if annotations else 'new'
+    return payload
 
 
 @router.post('/api/events/{event_id}/annotation', tags=['Events'])
 async def add_annotation(
     event_id: str,
-    status: str = 'new',
-    notes: Optional[str] = None,
-    analyst_id: str = 'analyst',
+    body: AnnotationIn,
     db: AsyncSession = Depends(get_db),
     _auth=Depends(require_auth),
 ):
-    """Add an analyst annotation to a security event."""
     event = await EventRepository.get_by_event_id(db, event_id)
     if not event:
         raise HTTPException(status_code=404, detail='Event not found')
+    if body.status not in ALLOWED_STATUSES:
+        raise HTTPException(status_code=400, detail='Invalid investigation status')
 
     annotation = AnalystAnnotationModel(
         event_id=event_id,
-        analyst_id=analyst_id,
-        status=status,
-        notes=notes,
+        analyst_id=body.analyst_id,
+        status=body.status,
+        notes=body.notes,
     )
     db.add(annotation)
     await db.flush()

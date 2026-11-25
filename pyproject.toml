@@ -1,8 +1,14 @@
-# Project metadata and tool config (pytest, ruff). Keep requirements.txt too if you prefer it simple.
+[project]
+name = "honeypot"
+version = "1.0.0"
+description = "Modular Python honeypot with FastAPI management dashboard"
+requires-python = ">=3.11"
+readme = "README.md"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100

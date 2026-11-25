@@ -5,8 +5,9 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import select, func, desc, update
+from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from backend.database.models import (
     SecurityEventModel,
@@ -53,7 +54,9 @@ class EventRepository:
     async def get_by_event_id(session: AsyncSession, event_id: str) -> Optional[SecurityEventModel]:
         """Fetch a single event by its UUID."""
         result = await session.execute(
-            select(SecurityEventModel).where(SecurityEventModel.event_id == event_id)
+            select(SecurityEventModel)
+            .options(selectinload(SecurityEventModel.annotations))
+            .where(SecurityEventModel.event_id == event_id)
         )
         return result.scalar_one_or_none()
 
@@ -68,6 +71,8 @@ class EventRepository:
         start_time: datetime = None,
         end_time: datetime = None,
         search: str = None,
+        sort_by: str = 'timestamp',
+        sort_dir: str = 'desc',
     ) -> tuple:
         """
         Return (list_of_events, total_count) with optional filters.
@@ -100,8 +105,15 @@ class EventRepository:
         count_q = select(func.count()).select_from(query.subquery())
         total = (await session.execute(count_q)).scalar_one()
 
-        # Apply ordering and pagination.
-        query = query.order_by(desc(SecurityEventModel.timestamp))
+        sort_map = {
+            'timestamp': SecurityEventModel.timestamp,
+            'severity': SecurityEventModel.severity,
+            'source_ip': SecurityEventModel.source_ip,
+            'attack_category': SecurityEventModel.attack_category,
+            'path': SecurityEventModel.path,
+        }
+        sort_col = sort_map.get(sort_by, SecurityEventModel.timestamp)
+        query = query.order_by(sort_col.asc() if sort_dir == 'asc' else desc(sort_col))
         query = query.offset((page - 1) * page_size).limit(page_size)
 
         rows = (await session.execute(query)).scalars().all()
@@ -156,15 +168,17 @@ class EventRepository:
         session: AsyncSession,
         hours: int = 24,
         bucket_minutes: int = 60,
+        source_ip: str | None = None,
     ) -> list:
         """Return hourly event counts for the timeline chart."""
         from datetime import timedelta
         cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
-        result = await session.execute(
-            select(SecurityEventModel.timestamp)
-            .where(SecurityEventModel.timestamp >= cutoff)
-            .order_by(SecurityEventModel.timestamp)
+        query = select(SecurityEventModel.timestamp).where(
+            SecurityEventModel.timestamp >= cutoff
         )
+        if source_ip:
+            query = query.where(SecurityEventModel.source_ip == source_ip)
+        result = await session.execute(query.order_by(SecurityEventModel.timestamp))
         timestamps = [row[0] for row in result.fetchall()]
 
         # Bucket into hourly intervals.
@@ -179,6 +193,51 @@ class EventRepository:
             {'time': k, 'count': v}
             for k, v in sorted(buckets.items())
         ]
+
+    @staticmethod
+    async def related_events(
+        session: AsyncSession,
+        source_ip: str,
+        exclude_id: str,
+        limit: int = 10,
+    ) -> list:
+        result = await session.execute(
+            select(SecurityEventModel)
+            .where(
+                SecurityEventModel.source_ip == source_ip,
+                SecurityEventModel.event_id != exclude_id,
+            )
+            .order_by(desc(SecurityEventModel.timestamp))
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+    @staticmethod
+    async def top_sources(session: AsyncSession, limit: int = 10) -> list:
+        result = await session.execute(
+            select(
+                SecurityEventModel.source_ip,
+                func.count(SecurityEventModel.id).label('cnt'),
+            )
+            .group_by(SecurityEventModel.source_ip)
+            .order_by(desc('cnt'))
+            .limit(limit)
+        )
+        return result.fetchall()
+
+    @staticmethod
+    async def hourly_activity(session: AsyncSession, hours: int = 24) -> list:
+        from datetime import timedelta
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        result = await session.execute(
+            select(SecurityEventModel.timestamp)
+            .where(SecurityEventModel.timestamp >= cutoff)
+        )
+        hours_map = {i: 0 for i in range(24)}
+        for (ts,) in result.fetchall():
+            if ts is not None:
+                hours_map[ts.hour] = hours_map.get(ts.hour, 0) + 1
+        return [{'hour': h, 'count': hours_map[h]} for h in range(24)]
 
 
 class SourceRepository:
@@ -245,3 +304,18 @@ class SourceRepository:
     async def count_unique_ips(session: AsyncSession) -> int:
         result = await session.execute(select(func.count(SourceObservationModel.id)))
         return result.scalar_one()
+
+    @staticmethod
+    async def write_audit(
+        session: AsyncSession,
+        actor: str,
+        action: str,
+        detail: str | None = None,
+        source_ip: str | None = None,
+    ) -> None:
+        session.add(AuditLogModel(
+            actor=actor,
+            action=action,
+            detail=detail,
+            source_ip=source_ip,
+        ))

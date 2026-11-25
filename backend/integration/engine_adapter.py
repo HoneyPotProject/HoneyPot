@@ -32,8 +32,10 @@ class EngineAdapter:
         self._queue: asyncio.Queue = None
         self._sink: BackendEventSink = None
         self._worker_task: asyncio.Task = None
-        self._dropped = [0]        # dropped_counter[0]
-        self._errors = [0]         # processing_errors[0]
+        self._dropped = [0]
+        self._errors = [0]
+        self._processed = [0]
+        self._last_event_id: str | None = None
         self._start_time = time.time()
 
     def start(self, session_factory) -> BackendEventSink:
@@ -46,6 +48,8 @@ class EngineAdapter:
         self._queue = asyncio.Queue(maxsize=self._queue_size)
         self._dropped = [0]
         self._errors = [0]
+        self._processed = [0]
+        self._last_event_id = None
         self._sink = BackendEventSink(self._queue, self._dropped)
         self._worker_task = asyncio.create_task(
             self._worker_loop(session_factory),
@@ -80,8 +84,20 @@ class EngineAdapter:
         return self._errors[0]
 
     @property
+    def processed_events(self) -> int:
+        return self._processed[0]
+
+    @property
+    def last_processed_event(self) -> str | None:
+        return self._last_event_id
+
+    @property
     def uptime_seconds(self) -> float:
         return round(time.time() - self._start_time, 1)
+
+    @property
+    def queue_capacity(self) -> int:
+        return self._queue_size
 
     async def _worker_loop(self, session_factory):
         """
@@ -103,8 +119,13 @@ class EngineAdapter:
                 # Persist and broadcast using a fresh DB session.
                 async with session_factory() as session:
                     service = EventService(session)
-                    await service.persist_and_broadcast(event_dict)
+                    saved = await service.persist_and_broadcast(event_dict)
 
+                if saved:
+                    self._processed[0] += 1
+                    self._last_event_id = event_dict.get('event_id')
+                else:
+                    self._errors[0] += 1
                 self._queue.task_done()
 
             except asyncio.CancelledError:

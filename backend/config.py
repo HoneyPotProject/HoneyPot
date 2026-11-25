@@ -1,51 +1,41 @@
 # Loads settings from .env using pydantic-settings: ports, DB path, API key.
 
-from pydantic_settings import BaseSettings
-from pydantic import field_validator
-import os
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """
-    All backend configuration loaded from environment variables or .env file.
+    """All backend configuration loaded from environment variables or .env."""
 
-    pydantic-settings automatically reads from .env if python-dotenv is installed.
-    """
-
-    # Authentication: management API key.
-    # Clients send this as: X-API-Key: <value>
     API_KEY: str = 'dev-key-change-in-production'
+    ADMIN_USERNAME: str = 'admin'
+    ADMIN_PASSWORD: str = 'admin'
+    SESSION_SECRET: str = 'dev-session-secret-change-in-production'
+    SESSION_TTL_SECONDS: int = 12 * 60 * 60
 
-    # SQLite database URL.
-    # Format: sqlite+aiosqlite:///./data/database/honeypot.db
     DATABASE_URL: str = 'sqlite+aiosqlite:///./data/database/honeypot.db'
 
-    # Port the decoy HTTP honeypot listens on.
     HONEYPOT_PORT: int = 8080
-
-    # Port the FastAPI management API listens on.
+    HONEYPOT_HOST: str = '0.0.0.0'
+    MANAGEMENT_HOST: str = '127.0.0.1'
     MANAGEMENT_PORT: int = 8000
 
-    # Allowed CORS origins (browser can call the API from these origins).
     CORS_ORIGINS: str = 'http://localhost:5173,http://127.0.0.1:5173'
-
-    # Maximum events in the in-memory queue before we start dropping.
     EVENT_QUEUE_SIZE: int = 1000
-
-    # Python logging level.
     LOG_LEVEL: str = 'INFO'
+    ENABLE_DECOY_PORTS: bool = False
+    AUTH_RATE_LIMIT_PER_MINUTE: int = 20
+    API_RATE_LIMIT_PER_MINUTE: int = 300
+
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_file_encoding='utf-8',
+        case_sensitive=False,
+        extra='ignore',
+    )
 
     @property
-    def cors_origins_list(self) -> list:
-        """Split the comma-separated CORS string into a list."""
+    def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(',') if o.strip()]
 
-    class Config:
-        env_file = '.env'
-        env_file_encoding = 'utf-8'
-        case_sensitive = False
-        extra = 'ignore'
 
-
-# Single shared instance used throughout the backend.
 settings = Settings()

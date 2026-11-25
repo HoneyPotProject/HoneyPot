@@ -26,22 +26,17 @@ class EventService:
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def persist_and_broadcast(self, event_dict: dict):
+    async def persist_and_broadcast(self, event_dict: dict) -> bool:
         """Save the event to the database, then push it to live dashboards."""
         try:
-            # 1. Write to database.
             await EventRepository.create(self._session, event_dict)
-
-            # 2. Update the per-IP source observation.
             await SourceRepository.upsert(self._session, event_dict['source_ip'], event_dict)
-
-            # 3. Commit both writes in one transaction.
             await self._session.commit()
 
         except Exception as exc:
             logger.error('Failed to persist event %s: %s', event_dict.get('event_id'), exc)
             await self._session.rollback()
-            return  # Don't broadcast if we didn't save.
+            return False
 
         # 4. Broadcast to WebSocket clients.
         # Failures here must never affect database integrity.
@@ -69,3 +64,4 @@ class EventService:
             await ws_manager.broadcast(ws_payload)
         except Exception as exc:
             logger.warning('WebSocket broadcast failed: %s', exc)
+        return True

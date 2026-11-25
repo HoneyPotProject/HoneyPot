@@ -4,11 +4,12 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Avatar } from '../ui/Avatar';
+import { LayoutDashboard, FileText, Hexagon, LogOut } from 'lucide-react';
 import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Dashboard', icon: '⬛', emoji: '📊' },
-  { to: '/documents', label: 'Documents',  icon: '⬛', emoji: '📄' },
+  { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+  { to: '/documents', label: 'Documents',  Icon: FileText },
 ];
 
 export function Sidebar({ collapsed = false, onToggle }) {
@@ -24,24 +25,28 @@ export function Sidebar({ collapsed = false, onToggle }) {
     <aside className={[styles.sidebar, collapsed ? styles.collapsed : ''].filter(Boolean).join(' ')}>
       {/* Logo */}
       <div className={styles.logo}>
-        <span className={styles.logoIcon}>🍯</span>
+        <span className={styles.logoIcon}>
+          <Hexagon size={20} strokeWidth={2.5} />
+        </span>
         {!collapsed && <span className={styles.logoText}>HoneyPot</span>}
       </div>
 
       {/* Nav */}
       <nav className={styles.nav} aria-label="Main navigation">
         <ul className={styles.navList}>
-          {NAV_ITEMS.map(item => (
-            <li key={item.to}>
+          {NAV_ITEMS.map(({ to, label, Icon }) => (
+            <li key={to}>
               <NavLink
-                to={item.to}
+                to={to}
                 className={({ isActive }) =>
                   [styles.navLink, isActive ? styles.active : ''].filter(Boolean).join(' ')
                 }
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? label : undefined}
               >
-                <span className={styles.navIcon} aria-hidden="true">{item.emoji}</span>
-                {!collapsed && <span className={styles.navLabel}>{item.label}</span>}
+                <span className={styles.navIcon} aria-hidden="true">
+                  <Icon size={18} strokeWidth={2.5} />
+                </span>
+                {!collapsed && <span className={styles.navLabel}>{label}</span>}
               </NavLink>
             </li>
           ))}
@@ -66,7 +71,7 @@ export function Sidebar({ collapsed = false, onToggle }) {
           title="Sign out"
           aria-label="Sign out"
         >
-          <span aria-hidden="true">🚪</span>
+          <LogOut size={16} strokeWidth={2.5} aria-hidden="true" />
           {!collapsed && <span>Sign out</span>}
         </button>
       </div>

@@ -8,39 +8,32 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { formatRelativeTime, truncate } from '../../utils/formatters';
+import { FileText, CheckCircle, PenLine, Archive, Inbox, Plus } from 'lucide-react';
 import styles from './DashboardPage.module.css';
 
-const STAT_CARDS = (stats, user) => [
+const STAT_CARDS = (stats) => [
   {
     label: 'Total Documents',
     value: stats.total,
-    icon: '📄',
-    color: 'var(--color-primary)',
-    glow: 'var(--color-primary-glow)',
+    Icon: FileText,
     desc: `${stats.draft} drafts`,
   },
   {
     label: 'Published',
     value: stats.published,
-    icon: '✅',
-    color: 'var(--color-success)',
-    glow: 'hsla(142, 72%, 50%, 0.25)',
+    Icon: CheckCircle,
     desc: 'Live documents',
   },
   {
     label: 'Drafts',
     value: stats.draft,
-    icon: '✏️',
-    color: 'var(--color-warning)',
-    glow: 'hsla(38, 92%, 55%, 0.2)',
+    Icon: PenLine,
     desc: 'In progress',
   },
   {
     label: 'Archived',
     value: stats.archived,
-    icon: '📦',
-    color: 'var(--text-muted)',
-    glow: 'hsla(220, 10%, 50%, 0.15)',
+    Icon: Archive,
     desc: 'Stored away',
   },
 ];
@@ -56,13 +49,13 @@ export function DashboardPage() {
       {/* Welcome banner */}
       <section className={`${styles.welcome} animate-fade-in`}>
         <div className={styles.welcomeText}>
-          <h2 className={styles.greeting}>Good day, {firstName}! 👋</h2>
+          <h2 className={styles.greeting}>Good day, {firstName}!</h2>
           <p className={styles.subtitle}>
             Here's what's happening with your workspace today.
           </p>
         </div>
         <Link to="/documents">
-          <Button variant="primary" size="md" leftIcon="✨">
+          <Button variant="ghost" size="md" leftIcon={<Plus size={16} strokeWidth={2.5} />}>
             New Document
           </Button>
         </Link>
@@ -70,15 +63,13 @@ export function DashboardPage() {
 
       {/* Stats grid */}
       <section aria-label="Stats" className={`${styles.statsGrid} stagger-children`}>
-        {STAT_CARDS(stats, user).map((card) => (
+        {STAT_CARDS(stats).map((card) => (
           <Card key={card.label} className={`${styles.statCard} animate-fade-in`} hover>
-            <div className={styles.statIconWrap} style={{ '--stat-glow': card.glow }}>
-              <span className={styles.statIcon} aria-hidden="true">{card.icon}</span>
+            <div className={styles.statIconWrap}>
+              <card.Icon size={22} strokeWidth={2.5} aria-hidden="true" />
             </div>
             <div>
-              <div className={styles.statValue} style={{ color: card.color }}>
-                {card.value}
-              </div>
+              <div className={styles.statValue}>{card.value}</div>
               <div className={styles.statLabel}>{card.label}</div>
               <div className={styles.statDesc}>{card.desc}</div>
             </div>
@@ -96,7 +87,9 @@ export function DashboardPage() {
         <Card padding="none" className={styles.tableCard}>
           {recentDocs.length === 0 ? (
             <div className={styles.empty}>
-              <span className={styles.emptyIcon}>📭</span>
+              <span className={styles.emptyIcon}>
+                <Inbox size={28} strokeWidth={2} />
+              </span>
               <p>No documents yet.</p>
               <Link to="/documents"><Button variant="outline" size="sm">Create your first doc</Button></Link>
             </div>

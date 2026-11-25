@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { validateEmail, validatePassword, validateName, getPasswordStrength } from '../../utils/validators';
+import { User, Mail, Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import styles from './AuthForm.module.css';
 
 export function SignupForm({ onSuccess, onSwitchTab }) {
@@ -46,7 +47,7 @@ export function SignupForm({ onSuccess, onSwitchTab }) {
     <form onSubmit={handleSubmit} noValidate className={styles.form}>
       {error && (
         <div className={styles.globalError} role="alert">
-          <span aria-hidden="true">⚠️</span> {error}
+          <AlertTriangle size={16} aria-hidden="true" /> {error}
         </div>
       )}
 
@@ -61,7 +62,7 @@ export function SignupForm({ onSuccess, onSwitchTab }) {
         autoComplete="name"
         enterKeyHint="next"
         placeholder="Alex Johnson"
-        leftIcon="👤"
+        leftIcon={<User size={16} strokeWidth={2} />}
         required
       />
 
@@ -79,7 +80,7 @@ export function SignupForm({ onSuccess, onSwitchTab }) {
         autoCorrect="off"
         enterKeyHint="next"
         placeholder="you@example.com"
-        leftIcon="✉️"
+        leftIcon={<Mail size={16} strokeWidth={2} />}
         required
       />
 
@@ -95,7 +96,7 @@ export function SignupForm({ onSuccess, onSwitchTab }) {
           autoComplete="new-password"
           enterKeyHint="done"
           placeholder="Min. 8 chars, 1 uppercase, 1 number"
-          leftIcon="🔒"
+          leftIcon={<Lock size={16} strokeWidth={2} />}
           rightElement={
             <button
               type="button"
@@ -103,7 +104,10 @@ export function SignupForm({ onSuccess, onSwitchTab }) {
               onClick={() => setShowPw(s => !s)}
               aria-label={showPw ? 'Hide password' : 'Show password'}
             >
-              {showPw ? '🙈' : '👁️'}
+              {showPw
+                ? <EyeOff size={15} strokeWidth={2} />
+                : <Eye size={15} strokeWidth={2} />
+              }
             </button>
           }
           required
@@ -117,7 +121,7 @@ export function SignupForm({ onSuccess, onSwitchTab }) {
                   key={lvl}
                   className={styles.strengthSegment}
                   style={{
-                    background: strength.score >= lvl ? strength.color : 'var(--border-subtle)',
+                    background: strength.score >= lvl ? strength.color : 'var(--cream-dark)',
                   }}
                 />
               ))}

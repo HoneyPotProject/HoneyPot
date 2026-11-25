@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { validateEmail, validatePassword } from '../../utils/validators';
+import { Mail, Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import styles from './AuthForm.module.css';
 
 export function LoginForm({ onSuccess, onSwitchTab }) {
@@ -41,7 +42,7 @@ export function LoginForm({ onSuccess, onSwitchTab }) {
     <form onSubmit={handleSubmit} noValidate className={styles.form}>
       {error && (
         <div className={styles.globalError} role="alert">
-          <span aria-hidden="true">⚠️</span> {error}
+          <AlertTriangle size={16} aria-hidden="true" /> {error}
         </div>
       )}
 
@@ -59,7 +60,7 @@ export function LoginForm({ onSuccess, onSwitchTab }) {
         autoCorrect="off"
         enterKeyHint="next"
         placeholder="you@example.com"
-        leftIcon="✉️"
+        leftIcon={<Mail size={16} strokeWidth={2} />}
         required
       />
 
@@ -74,7 +75,7 @@ export function LoginForm({ onSuccess, onSwitchTab }) {
         autoComplete="current-password"
         enterKeyHint="done"
         placeholder="••••••••"
-        leftIcon="🔒"
+        leftIcon={<Lock size={16} strokeWidth={2} />}
         rightElement={
           <button
             type="button"
@@ -82,7 +83,10 @@ export function LoginForm({ onSuccess, onSwitchTab }) {
             onClick={() => setShowPw(s => !s)}
             aria-label={showPw ? 'Hide password' : 'Show password'}
           >
-            {showPw ? '🙈' : '👁️'}
+            {showPw
+              ? <EyeOff size={15} strokeWidth={2} />
+              : <Eye size={15} strokeWidth={2} />
+            }
           </button>
         }
         required

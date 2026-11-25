@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { LoginForm }  from '../../components/auth/LoginForm';
 import { SignupForm } from '../../components/auth/SignupForm';
+import { Hexagon } from 'lucide-react';
 import styles from './AuthPage.module.css';
 
 export function AuthPage() {
@@ -20,15 +21,13 @@ export function AuthPage() {
 
   return (
     <div className={styles.page}>
-      {/* Background blobs */}
-      <div className={styles.blob1} aria-hidden="true" />
-      <div className={styles.blob2} aria-hidden="true" />
-
       <div className={styles.card}>
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.logo}>
-            <span className={styles.logoEmoji}>🍯</span>
+            <span className={styles.logoIcon}>
+              <Hexagon size={24} strokeWidth={2.5} />
+            </span>
             <span className={styles.logoName}>HoneyPot</span>
           </div>
           <p className={styles.tagline}>
@@ -62,11 +61,8 @@ export function AuthPage() {
           >
             Sign Up
           </button>
-          <div
-            className={styles.tabIndicator}
-            style={{ transform: tab === 'signup' ? 'translateX(100%)' : 'translateX(0)' }}
-            aria-hidden="true"
-          />
+          {/* Hidden — no sliding indicator needed in neobrutalism; solid bg does the work */}
+          <div className={styles.tabIndicator} aria-hidden="true" />
         </div>
 
         {/* Form Panels */}

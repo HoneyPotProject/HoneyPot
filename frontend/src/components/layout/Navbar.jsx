@@ -4,6 +4,7 @@
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Avatar } from '../ui/Avatar';
+import { Menu, Hand } from 'lucide-react';
 import styles from './Navbar.module.css';
 
 const PAGE_TITLES = {
@@ -25,14 +26,15 @@ export function Navbar({ onToggleSidebar }) {
           onClick={onToggleSidebar}
           aria-label="Toggle sidebar"
         >
-          <span className={styles.menuIcon} aria-hidden="true">☰</span>
+          <Menu size={18} strokeWidth={2.5} aria-hidden="true" />
         </button>
         <h1 className={styles.pageTitle}>{title}</h1>
       </div>
 
       <div className={styles.right}>
         <span className={styles.greeting}>
-          Hey, <strong>{user?.name?.split(' ')[0] || 'there'}</strong> 👋
+          Hey, <strong>{user?.name?.split(' ')[0] || 'there'}</strong>
+          {' '}<Hand size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
         </span>
         <Avatar name={user?.name || ''} src={user?.avatar} size="sm" />
       </div>

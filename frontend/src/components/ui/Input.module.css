@@ -1,11 +1,12 @@
-/* Input.module.css */
+/* Input.module.css — Neobrutalism */
 .container { display: flex; flex-direction: column; gap: var(--space-2); }
 
 .label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  letter-spacing: 0.01em;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .inputWrap {
@@ -16,46 +17,48 @@
 
 .input {
   width: 100%;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  background: var(--white);
+  border: var(--border);
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-size: 0.9375rem;
+  font-family: var(--font-display);
+  font-weight: 500;
   padding: 0.65rem var(--space-4);
+  box-shadow: var(--shadow-sm);
   transition:
-    border-color var(--transition-fast),
     box-shadow var(--transition-fast),
-    background var(--transition-fast);
+    transform var(--transition-fast);
   outline: none;
-  backdrop-filter: var(--glass-blur-sm);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
 }
 
-.input::placeholder { color: var(--text-faint); }
+.input::placeholder { color: #999; }
 
 .input:hover:not(:disabled) {
-  border-color: var(--border-normal);
+  box-shadow: 3px 3px 0 var(--black);
 }
 
 .input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-glow);
-  background: var(--bg-elevated);
+  box-shadow: none;
+  transform: translate(2px, 2px);
+  outline: 3px solid var(--yellow);
+  outline-offset: 1px;
 }
 
 .input:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .input.hasError {
-  border-color: var(--color-danger);
+  border-color: var(--pink);
+  box-shadow: 2px 2px 0 var(--pink);
 }
 .input.hasError:focus {
-  box-shadow: 0 0 0 3px hsla(0, 78%, 62%, 0.25);
+  outline-color: var(--pink);
 }
 
-.input.hasLeft  { padding-left:  2.5rem; }
+.input.hasLeft  { padding-left:  2.6rem; }
 .input.hasRight { padding-right: 2.75rem; }
 
 .leftIcon {
@@ -65,7 +68,6 @@
   align-items: center;
   color: var(--text-faint);
   pointer-events: none;
-  font-size: 1rem;
   z-index: 1;
 }
 
@@ -79,7 +81,8 @@
 
 .error {
   font-size: 0.8125rem;
-  color: var(--color-danger);
+  font-weight: 600;
+  color: var(--pink-dark);
   display: flex;
   align-items: center;
   gap: var(--space-1);

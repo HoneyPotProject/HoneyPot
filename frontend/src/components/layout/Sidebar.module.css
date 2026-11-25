@@ -1,16 +1,14 @@
-/* Sidebar.module.css */
+/* Sidebar.module.css — Neobrutalism */
 .sidebar {
   display: flex;
   flex-direction: column;
   width: 240px;
   min-height: 100dvh;
-  background: var(--bg-surface);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border-right: 1px solid var(--border-subtle);
+  background: var(--cream-dark);
+  border-right: var(--border);
   padding: var(--space-5) var(--space-3);
   gap: var(--space-5);
-  transition: width var(--transition-normal);
+  transition: width 200ms ease;
   flex-shrink: 0;
   position: sticky;
   top: 0;
@@ -29,16 +27,26 @@
   padding: var(--space-2) var(--space-3);
   overflow: hidden;
 }
-.logoIcon { font-size: 1.6rem; flex-shrink: 0; }
+.logoIcon {
+  width: 36px;
+  height: 36px;
+  background: var(--yellow);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--black);
+}
 .logoText {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: 800;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--black);
   white-space: nowrap;
   letter-spacing: -0.02em;
+  text-transform: uppercase;
 }
 
 /* Nav */
@@ -50,28 +58,51 @@
   align-items: center;
   gap: var(--space-3);
   padding: 0.65rem var(--space-3);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
-  font-size: 0.9375rem;
-  font-weight: 500;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
   transition:
     color var(--transition-fast),
-    background var(--transition-fast);
+    background var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
   white-space: nowrap;
   overflow: hidden;
-}
-.navLink:hover {
-  color: var(--text-primary);
-  background: var(--bg-hover);
-}
-.navLink.active {
-  color: var(--color-primary);
-  background: hsla(258, 90%, 66%, 0.1);
-  font-weight: 600;
-  box-shadow: inset 3px 0 0 var(--color-primary);
+  border: 1.5px solid transparent;
 }
 
-.navIcon { font-size: 1.1rem; flex-shrink: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .navLink:hover {
+    color: var(--black);
+    background: var(--white);
+    border-color: var(--black);
+    box-shadow: var(--shadow-sm);
+    transform: translate(-1px, -1px);
+  }
+}
+
+.navLink:hover {
+  color: var(--black);
+  background: var(--white);
+  border-color: var(--black);
+}
+
+.navLink.active {
+  color: var(--black);
+  background: var(--yellow);
+  border-color: var(--black);
+  box-shadow: var(--shadow-sm);
+  font-weight: 700;
+}
+
+.navIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
 .navLabel { line-height: 1; }
 
 /* Bottom */
@@ -79,7 +110,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  border-top: 1px solid var(--border-subtle);
+  border-top: var(--border);
   padding-top: var(--space-4);
 }
 
@@ -98,8 +129,8 @@
 }
 .userName {
   font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-weight: 700;
+  color: var(--black);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -118,18 +149,36 @@
   gap: var(--space-3);
   width: 100%;
   padding: 0.65rem var(--space-3);
-  border-radius: var(--radius-md);
-  border: none;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid transparent;
   background: none;
   color: var(--text-faint);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: color var(--transition-fast), background var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
   white-space: nowrap;
   overflow: hidden;
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .logoutBtn:hover {
+    color: var(--black);
+    background: var(--pink);
+    border-color: var(--black);
+    box-shadow: var(--shadow-sm);
+    transform: translate(-1px, -1px);
+  }
+}
 .logoutBtn:hover {
-  color: var(--color-danger);
-  background: hsla(0, 78%, 62%, 0.1);
+  color: var(--black);
+  background: var(--pink);
+  border-color: var(--black);
 }

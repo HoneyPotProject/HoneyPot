@@ -1,4 +1,4 @@
-/* AuthForm.module.css */
+/* AuthForm.module.css — Neobrutalism */
 .form {
   display: flex;
   flex-direction: column;
@@ -10,34 +10,50 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
-  background: hsla(0, 78%, 62%, 0.1);
-  border: 1px solid hsla(0, 78%, 62%, 0.3);
-  border-radius: var(--radius-md);
-  color: var(--color-danger);
+  background: var(--pink);
+  border: var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  color: var(--black);
   font-size: 0.875rem;
-  font-weight: 500;
-  animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  font-weight: 700;
+  animation: neoShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 
-@keyframes shake {
+@keyframes neoShake {
   0%, 100% { transform: translateX(0); }
-  20%       { transform: translateX(-6px); }
-  40%       { transform: translateX(6px); }
-  60%       { transform: translateX(-4px); }
-  80%       { transform: translateX(4px); }
+  20%       { transform: translateX(-5px); }
+  40%       { transform: translateX(5px); }
+  60%       { transform: translateX(-3px); }
+  80%       { transform: translateX(3px); }
 }
 
 .showPwBtn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 2px;
+  background: var(--cream-dark);
+  border: var(--border-thin);
   border-radius: var(--radius-sm);
-  transition: opacity var(--transition-fast);
-  line-height: 1;
+  cursor: pointer;
+  padding: 3px 5px;
+  display: flex;
+  align-items: center;
+  color: var(--black);
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
-.showPwBtn:hover { opacity: 0.7; }
+@media (prefers-reduced-motion: no-preference) {
+  .showPwBtn:hover {
+    background: var(--yellow);
+    transform: translate(-1px, -1px);
+    box-shadow: 2px 2px 0 var(--black);
+  }
+  .showPwBtn:active {
+    transform: var(--active-translate);
+    box-shadow: none;
+  }
+}
+.showPwBtn:hover { background: var(--yellow); }
 
 /* Password strength */
 .strengthWrap {
@@ -52,16 +68,20 @@
   flex: 1;
 }
 .strengthSegment {
-  height: 4px;
+  height: 6px;
   flex: 1;
-  border-radius: var(--radius-full);
+  border-radius: 0;
+  border: 1px solid var(--black);
   transition: background var(--transition-normal);
 }
 .strengthLabel {
   font-size: 0.75rem;
-  font-weight: 600;
-  min-width: 70px;
+  font-weight: 800;
+  min-width: 60px;
   text-align: right;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--black);
   transition: color var(--transition-normal);
 }
 
@@ -70,15 +90,18 @@
   text-align: center;
   font-size: 0.875rem;
   color: var(--text-faint);
+  font-weight: 500;
 }
 .switchBtn {
   background: none;
   border: none;
-  color: var(--color-primary);
+  color: var(--black);
   font-size: inherit;
-  font-weight: 600;
+  font-weight: 800;
   cursor: pointer;
   padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   transition: color var(--transition-fast);
 }
-.switchBtn:hover { color: var(--color-secondary); }
+.switchBtn:hover { color: var(--purple); }

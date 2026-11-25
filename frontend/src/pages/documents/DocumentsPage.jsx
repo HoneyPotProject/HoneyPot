@@ -13,6 +13,10 @@ import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { formatRelativeTime, formatDate, truncate } from '../../utils/formatters';
 import { validateDocTitle } from '../../utils/validators';
+import {
+  Search, LayoutGrid, List, Plus, Pencil, Trash2,
+  FolderOpen, Trash, ChevronLeft, ChevronRight, X
+} from 'lucide-react';
 import styles from './DocumentsPage.module.css';
 
 const STATUS_OPTIONS = ['all', 'published', 'draft', 'archived'];
@@ -30,7 +34,6 @@ export function DocumentsPage() {
 
   const debouncedSearch = useDebounce(search, 300);
 
-  // Filter documents
   const filtered = useMemo(() => {
     return documents.filter(doc => {
       const q = debouncedSearch.toLowerCase();
@@ -112,7 +115,6 @@ export function DocumentsPage() {
 
   return (
     <div className={styles.page}>
-      {/* Toolbar */}
       <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
           <Input
@@ -120,13 +122,12 @@ export function DocumentsPage() {
             placeholder="Search documents…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            leftIcon="🔍"
+            leftIcon={<Search size={16} strokeWidth={2} />}
             aria-label="Search documents"
             containerClassName={styles.searchInput}
           />
         </div>
         <div className={styles.toolbarRight}>
-          {/* View toggle */}
           <div className={styles.viewToggle} role="group" aria-label="View mode">
             <button
               type="button"
@@ -135,7 +136,7 @@ export function DocumentsPage() {
               aria-pressed={viewMode === 'grid'}
               title="Grid view"
             >
-              ⊞
+              <LayoutGrid size={16} strokeWidth={2} />
             </button>
             <button
               type="button"
@@ -144,16 +145,15 @@ export function DocumentsPage() {
               aria-pressed={viewMode === 'list'}
               title="List view"
             >
-              ☰
+              <List size={16} strokeWidth={2} />
             </button>
           </div>
-          <Button variant="primary" size="md" leftIcon="+" onClick={createModal.open}>
+          <Button variant="primary" size="md" leftIcon={<Plus size={16} strokeWidth={2.5} />} onClick={createModal.open}>
             New Doc
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
       <div className={styles.filters}>
         <div className={styles.statusFilters} role="group" aria-label="Status filter">
           {STATUS_OPTIONS.map(s => (
@@ -183,10 +183,11 @@ export function DocumentsPage() {
         </span>
       </div>
 
-      {/* Document Grid/List */}
       {paginatedData.length === 0 ? (
         <div className={styles.empty}>
-          <span className={styles.emptyIcon}>🗂️</span>
+          <span className={styles.emptyIcon}>
+            <FolderOpen size={28} strokeWidth={2} />
+          </span>
           <p className={styles.emptyText}>No documents found.</p>
           <Button variant="outline" size="sm" onClick={() => { setSearch(''); setStatus('all'); setTag(''); }}>
             Clear filters
@@ -208,14 +209,18 @@ export function DocumentsPage() {
                     onClick={() => openEdit(doc)}
                     aria-label={`Edit "${doc.title}"`}
                     title="Edit"
-                  >✏️</button>
+                  >
+                    <Pencil size={13} strokeWidth={2.5} />
+                  </button>
                   <button
                     type="button"
                     className={`${styles.actionBtn} ${styles.deleteBtn}`}
                     onClick={() => deleteModal.open(doc)}
                     aria-label={`Delete "${doc.title}"`}
                     title="Delete"
-                  >🗑️</button>
+                  >
+                    <Trash2 size={13} strokeWidth={2.5} />
+                  </button>
                 </div>
               </div>
 
@@ -238,7 +243,6 @@ export function DocumentsPage() {
         </div>
       )}
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <nav className={styles.pagination} aria-label="Document pages">
           <button
@@ -248,7 +252,7 @@ export function DocumentsPage() {
             disabled={page === 1}
             aria-label="Previous page"
           >
-            ← Prev
+            <ChevronLeft size={15} strokeWidth={2.5} style={{ display: 'inline' }} /> Prev
           </button>
           <div className={styles.pageNumbers}>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
@@ -271,12 +275,11 @@ export function DocumentsPage() {
             disabled={page === totalPages}
             aria-label="Next page"
           >
-            Next →
+            Next <ChevronRight size={15} strokeWidth={2.5} style={{ display: 'inline' }} />
           </button>
         </nav>
       )}
 
-      {/* ── Create Modal ─────────────────────────────────── */}
       <Modal isOpen={createModal.isOpen} onClose={createModal.close} title="New Document" size="md">
         <form onSubmit={handleCreate} className={styles.docForm} noValidate>
           <Input
@@ -331,7 +334,6 @@ export function DocumentsPage() {
         </form>
       </Modal>
 
-      {/* ── Edit Modal ───────────────────────────────────── */}
       <Modal isOpen={editModal.isOpen} onClose={editModal.close} title="Edit Document" size="md">
         <form onSubmit={handleEdit} className={styles.docForm} noValidate>
           <Input
@@ -385,10 +387,11 @@ export function DocumentsPage() {
         </form>
       </Modal>
 
-      {/* ── Delete Confirm Modal ─────────────────────────── */}
       <Modal isOpen={deleteModal.isOpen} onClose={deleteModal.close} title="Delete Document" size="sm">
         <div className={styles.deleteConfirm}>
-          <span className={styles.deleteIcon} aria-hidden="true">🗑️</span>
+          <span className={styles.deleteIcon} aria-hidden="true">
+            <Trash size={28} strokeWidth={2.5} />
+          </span>
           <p className={styles.deleteText}>
             Are you sure you want to delete{' '}
             <strong>"{deleteModal.payload?.title}"</strong>?

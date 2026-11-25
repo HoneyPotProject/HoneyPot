@@ -1,13 +1,11 @@
-/* Navbar.module.css */
+/* Navbar.module.css — Neobrutalism */
 .navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4) var(--space-6);
-  background: var(--bg-surface);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border-bottom: 1px solid var(--border-subtle);
+  padding: var(--space-3) var(--space-6);
+  background: var(--yellow);
+  border-bottom: var(--border);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -26,25 +24,33 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border: none;
+  border: var(--border);
   border-radius: var(--radius-sm);
-  background: none;
-  color: var(--text-muted);
-  font-size: 1.1rem;
+  background: var(--white);
+  color: var(--black);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
-  transition: color var(--transition-fast), background var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
-.menuBtn:hover {
-  color: var(--text-primary);
-  background: var(--bg-hover);
+@media (prefers-reduced-motion: no-preference) {
+  .menuBtn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 var(--black);
+  }
+  .menuBtn:active {
+    transform: var(--active-translate);
+    box-shadow: none;
+  }
 }
-.menuIcon { line-height: 1; }
 
 .pageTitle {
   font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  color: var(--black);
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
 }
 
 .right {
@@ -55,9 +61,10 @@
 
 .greeting {
   font-size: 0.875rem;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--black);
 }
-.greeting strong { color: var(--text-primary); }
+.greeting strong { font-weight: 800; }
 
 @media (max-width: 480px) {
   .greeting { display: none; }

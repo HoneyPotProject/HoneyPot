@@ -1,13 +1,14 @@
-/* Avatar.module.css */
+/* Avatar.module.css — Neobrutalism */
 .avatar {
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: var(--gradient-primary);
-  border: 2px solid var(--border-normal);
+  background: var(--yellow);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
 }
 
 .sm  { width: 28px;  height: 28px; }
@@ -23,10 +24,11 @@
 }
 
 .initials {
-  font-weight: 700;
-  color: #fff;
+  font-weight: 800;
+  color: var(--black);
   letter-spacing: 0.03em;
   line-height: 1;
+  font-family: var(--font-display);
 }
 
 .sm  .initials { font-size: 0.65rem; }

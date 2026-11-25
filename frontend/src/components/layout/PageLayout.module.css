@@ -1,7 +1,8 @@
-/* PageLayout.module.css */
+/* PageLayout.module.css — Neobrutalism */
 .shell {
   display: flex;
   min-height: 100dvh;
+  background: var(--cream);
 }
 
 .main {
@@ -15,7 +16,7 @@
 .content {
   flex: 1;
   padding: var(--space-6);
-  animation: fadeIn 300ms ease both;
+  animation: fadeIn 250ms ease both;
 }
 
 @keyframes fadeIn {

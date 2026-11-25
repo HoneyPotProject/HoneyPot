@@ -14,11 +14,55 @@ from backend.database.models import (
     SourceObservationModel,
     AnalystAnnotationModel,
     AuditLogModel,
+    UserModel,
 )
-
 logger = logging.getLogger(__name__)
 
+class UserRepository:
 
+    @staticmethod
+    async def get_by_username(
+        session: AsyncSession,
+        username: str,
+    ) -> Optional[UserModel]:
+
+        result = await session.execute(
+            select(UserModel).where(
+                UserModel.username == username
+            )
+        )
+
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def count_users(session: AsyncSession) -> int:
+
+        result = await session.execute(
+            select(func.count(UserModel.id)
+            )
+        )
+
+        return result.scalar_one()
+
+    @staticmethod
+    async def create(
+        session: AsyncSession,
+        username: str,
+        email:str,
+        password_hash: str,
+    ) -> UserModel:
+
+        user = UserModel(
+            username=username,
+            email=email,
+            password_hash=password_hash,
+            role='administrator',
+        )
+        print(user,"hello brooooooooooooooooooooo")
+        session.add(user)
+        await session.flush()
+
+        return user
 class EventRepository:
     """
     All database operations for security events.

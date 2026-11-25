@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
     } catch (err) {
       setError(err.message);
       return { success: false, error: err.message };
-    } finally {
+    } finally { 
       setLoading(false);
     }
   }, []);

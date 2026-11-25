@@ -125,3 +125,4 @@ schemas/*.py	Pydantic request and response models.
 services/event_service.py	Glue: runs the repository save, then broadcasts through the WebSocket manager.
 services/ws_manager.py	Tracks connected clients and broadcasts safely, removing dead connections.
 ```
+abcd

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
-import { validateEmail, validatePassword } from '../../utils/validators';
+import { validateEmail } from '../../utils/validators';
 import { Mail, Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import styles from './AuthForm.module.css';
 

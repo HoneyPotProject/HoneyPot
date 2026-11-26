@@ -130,7 +130,6 @@ async def login(
     authenticated = False
 
     if user is not None:
-        # Verify the submitted password against the stored password hash.
         authenticated = verify_password(
             payload.password,
             user.password_hash,
@@ -199,7 +198,7 @@ async def me(
     user: str = Depends(require_auth),
     db: AsyncSession = Depends(get_db),
 ):
-    account = await UserRepository.get_by_username(db, user)
+    account = await UserRepository.get_by_email(db, user)
 
     return {
         'username': user,

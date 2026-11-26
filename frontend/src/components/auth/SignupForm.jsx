@@ -39,7 +39,7 @@ export function SignupForm({ onSuccess, onSwitchTab }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    const result = await signup({ name: fields.name, email: fields.email, password: fields.password });
+    const result = await signup({ username: fields.name, email: fields.email, password: fields.password });
     if (result.success) onSuccess();
   };
 

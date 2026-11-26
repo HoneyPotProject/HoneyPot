@@ -126,3 +126,4 @@ services/event_service.py	Glue: runs the repository save, then broadcasts throug
 services/ws_manager.py	Tracks connected clients and broadcasts safely, removing dead connections.
 ```
 abcd
+uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload

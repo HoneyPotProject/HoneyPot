@@ -15,7 +15,19 @@ from backend.database.connection import Base
 def _now():
     return datetime.now(timezone.utc)
 
+class UserModel(Base):
+    __tablename__ = 'users'
 
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(100), nullable=False, unique=True, index=True)
+    email=Column(String(100), nullable=False, unique=True, index=True)
+    password_hash = Column(String(255), nullable=False)
+    role = Column(String(30), nullable=False, default='administrator')
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=_now,
+    )
 class SecurityEventModel(Base):
     """
     One row per security event detected by the honeypot engine.
@@ -29,8 +41,7 @@ class SecurityEventModel(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
 
     # UUID from the engine (string form for SQLite compatibility).
-    event_id = Column(String(36), unique=True, nullable=False, index=True,
-                      default=lambda: str(uuid.uuid4()))
+    event_id = Column(String(36), unique=True, nullable=False, index=True,default=lambda: str(uuid.uuid4()))
 
     # Where the attack came from.
     source_ip = Column(String(45), nullable=False, index=True)
@@ -68,8 +79,7 @@ class SecurityEventModel(Base):
     metadata_json = Column(Text, nullable=False, default='{}')
 
     # Relationship to analyst annotations.
-    annotations = relationship('AnalystAnnotationModel', back_populates='event',
-                               cascade='all, delete-orphan')
+    annotations = relationship('AnalystAnnotationModel', back_populates='event',cascade='all, delete-orphan')
 
     __table_args__ = (
         # Composite index for the most common dashboard query.
@@ -107,8 +117,7 @@ class AnalystAnnotationModel(Base):
     __tablename__ = 'analyst_annotations'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    event_id = Column(String(36), ForeignKey('security_events.event_id'),
-                      nullable=False, index=True)
+    event_id = Column(String(36), ForeignKey('security_events.event_id'),nullable=False, index=True)
     analyst_id = Column(String(100), nullable=False, default='system')
     status = Column(String(30), nullable=False, default='new')
     notes = Column(Text, nullable=True)

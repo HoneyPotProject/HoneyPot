@@ -9,19 +9,50 @@ import { AuthPage }      from './pages/auth/AuthPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { DocumentsPage } from './pages/documents/DocumentsPage';
 
+/** Shown while the initial session check is running */
+function FullScreenLoader() {
+  return (
+    <div style={{ display: 'grid', placeItems: 'center', minHeight: '100vh' }}>
+      Loading...
+    </div>
+  );
+}
+
 /** Redirect unauthenticated users to /auth */
 function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, initializing } = useAuth();
+  if (initializing) return <FullScreenLoader />;
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
   return <PageLayout>{children}</PageLayout>;
 }
 
+/** Keep logged-in users away from /auth */
+function PublicRoute({ children }) {
+  const { isAuthenticated, initializing } = useAuth();
+  if (initializing) return <FullScreenLoader />;
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
+/** Sends / and unknown URLs to the right place once we know the auth state */
+function RootRedirect() {
+  const { isAuthenticated, initializing } = useAuth();
+  if (initializing) return <FullScreenLoader />;
+  return <Navigate to={isAuthenticated ? '/dashboard' : '/auth'} replace />;
+}
+
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
   return (
     <Routes>
       {/* Auth page */}
-      <Route path="/auth" element={<AuthPage />} />
+      <Route
+        path="/auth"
+        element={
+          <PublicRoute>
+            <AuthPage />
+          </PublicRoute>
+        }
+      />
 
       {/* Protected routes */}
       <Route
@@ -41,17 +72,9 @@ function AppRoutes() {
         }
       />
 
-      {/* Root redirect */}
-      <Route
-        path="/"
-        element={<Navigate to={isAuthenticated ? '/dashboard' : '/auth'} replace />}
-      />
-
-      {/* Catch-all */}
-      <Route
-        path="*"
-        element={<Navigate to={isAuthenticated ? '/dashboard' : '/auth'} replace />}
-      />
+      {/* Root redirect + catch-all */}
+      <Route path="/" element={<RootRedirect />} />
+      <Route path="*" element={<RootRedirect />} />
     </Routes>
   );
 }

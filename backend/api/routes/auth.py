@@ -2,7 +2,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
+EMAIL_PATTERN = r'^[^@\s]+@[^@\s]+\.[^@\s]+$'
 from backend.api.dependencies import get_db, require_auth
 from backend.auth import (
     COOKIE_NAME,
@@ -21,19 +23,9 @@ router = APIRouter()
 
 
 class SignupIn(BaseModel):
-    username: str = Field(
-        min_length=2,
-        max_length=100,
-        pattern=r"^[A-Za-z0-9_.\- ]+$",
-    )
-    email: str = Field(
-        min_length=5,
-        max_length=100,
-    )
-    password: str = Field(
-        min_length=12,
-        max_length=200,
-    )
+    username: str = Field(min_length=2, max_length=100, pattern=r'^[A-Za-z0-9_.\- ]+$')
+    email: str = Field(min_length=5, max_length=100, pattern=EMAIL_PATTERN)
+    password: str = Field(min_length=12, max_length=200)
 
 
 class LoginIn(BaseModel):
@@ -70,16 +62,15 @@ async def signup(
     Public registration is disabled after the first account.
     """
 
-    # Check whether an administrator already exists.
-    # user_count = await UserRepository.count_users(db)
+    #Check whether an administrator already exists.
+    user_count = await UserRepository.count_users(db)
 
-    # if user_count > 0:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail='Registration is disabled. An administrator already exists.',
-    #     )
+    if user_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Registration is disabled. An administrator already exists.',
+        )
 
-    # Hash the password before storing it.
     password_hash = hash_password(payload.password)
 
     try:

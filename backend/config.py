@@ -1,37 +1,48 @@
-# Loads settings from .env using pydantic-settings: ports, DB path, API key.
+# Loads all settings from .env. No defaults: a missing value stops startup.
 
+from pathlib import Path
+
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+ENV_FILE = Path(__file__).resolve().parent.parent / '.env'
 
 
 class Settings(BaseSettings):
-    """All backend configuration loaded from environment variables or .env."""
+    API_KEY: str
+    ADMIN_USERNAME: str
+    ADMIN_PASSWORD: str
+    SESSION_SECRET: str
+    SESSION_TTL_SECONDS: int
 
-    API_KEY: str = 'dev-key-change-in-production'
-    ADMIN_USERNAME: str = 'admin'
-    ADMIN_PASSWORD: str = 'admin'
-    SESSION_SECRET: str = 'dev-session-secret-change-in-production'
-    SESSION_TTL_SECONDS: int = 12 * 60 * 60
+    DATABASE_URL: str
 
-    DATABASE_URL: str = 'sqlite+aiosqlite:///./data/database/honeypot.db'
+    HONEYPOT_HOST: str
+    HONEYPOT_PORT: int
+    MANAGEMENT_HOST: str
+    MANAGEMENT_PORT: int
 
-    HONEYPOT_PORT: int = 8080
-    HONEYPOT_HOST: str = '0.0.0.0'
-    MANAGEMENT_HOST: str = '127.0.0.1'
-    MANAGEMENT_PORT: int = 8000
-
-    CORS_ORIGINS: str = 'http://localhost:5173,http://127.0.0.1:5173'
-    EVENT_QUEUE_SIZE: int = 1000
-    LOG_LEVEL: str = 'INFO'
-    ENABLE_DECOY_PORTS: bool = False
-    AUTH_RATE_LIMIT_PER_MINUTE: int = 20
-    API_RATE_LIMIT_PER_MINUTE: int = 300
+    CORS_ORIGINS: str
+    EVENT_QUEUE_SIZE: int
+    LOG_LEVEL: str
+    ENABLE_DECOY_PORTS: bool
+    AUTH_RATE_LIMIT_PER_MINUTE: int
+    API_RATE_LIMIT_PER_MINUTE: int
 
     model_config = SettingsConfigDict(
-        env_file='.env',
+        env_file=ENV_FILE,
         env_file_encoding='utf-8',
         case_sensitive=False,
         extra='ignore',
     )
+
+    @model_validator(mode='after')
+    def _reject_placeholders(self):
+        for name in ('API_KEY', 'ADMIN_PASSWORD', 'SESSION_SECRET'):
+            value = getattr(self, name)
+            if value.lower().startswith(('change', 'dev-')) or value.lower() == 'admin':
+                raise ValueError(f'{name} in .env is still a placeholder')
+        return self
 
     @property
     def cors_origins_list(self) -> list[str]:

@@ -1,11 +1,11 @@
-# Administrator authentication: API key, session cookie, password hashing.
+# Administrator authentication: API key, session cookie.
+# Password hashing lives in backend/passwords.py.
 
 from __future__ import annotations
 
 import hashlib
 import hmac
 import logging
-import secrets
 import time
 from typing import Optional
 
@@ -13,38 +13,19 @@ from fastapi import HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader
 
 from backend.config import settings
+from backend.passwords import hash_password, verify_password  # re-exported for other modules
 
 logger = logging.getLogger(__name__)
 
 api_key_header = APIKeyHeader(name='X-API-Key', auto_error=False)
 COOKIE_NAME = 'hp_session'
-PBKDF2_ITERATIONS = 200_000
-
-
-def hash_password(password: str, salt: str | None = None) -> str:
-    salt_bytes = (salt or secrets.token_hex(16)).encode('utf-8')
-    if salt:
-        salt_bytes = salt.encode('utf-8')
-    else:
-        salt = secrets.token_hex(16)
-        salt_bytes = salt.encode('utf-8')
-    digest = hashlib.pbkdf2_hmac(
-        'sha256',
-        password.encode('utf-8'),
-        salt_bytes,
-        PBKDF2_ITERATIONS,
-    )
-    return f'{salt}${digest.hex()}'
-
-
-def verify_password(password: str, stored: str) -> bool:
-    if '$' not in stored:
-        return hmac.compare_digest(password, stored)
-    salt, _digest = stored.split('$', 1)
-    return hmac.compare_digest(hash_password(password, salt), stored)
-
 
 _ADMIN_PASSWORD_HASH = hash_password(settings.ADMIN_PASSWORD)
+
+
+def _safe_equals(a: str, b: str) -> bool:
+    """Constant-time comparison that cannot crash on non-ASCII input."""
+    return hmac.compare_digest(a.encode('utf-8'), b.encode('utf-8'))
 
 
 def _sign(payload: str) -> str:
@@ -68,9 +49,7 @@ def parse_session_token(token: str | None) -> Optional[str]:
     if len(parts) != 3:
         return None
     username, expiry_s, signature = parts
-    payload = f'{username}|{expiry_s}'
-    expected = _sign(payload)
-    if not hmac.compare_digest(signature, expected):
+    if not _safe_equals(signature, _sign(f'{username}|{expiry_s}')):
         return None
     try:
         expiry = int(expiry_s)
@@ -82,9 +61,9 @@ def parse_session_token(token: str | None) -> Optional[str]:
 
 
 def authenticate_credentials(username: str, password: str) -> bool:
-    if not hmac.compare_digest(username, settings.ADMIN_USERNAME):
-        return False
-    return verify_password(password, _ADMIN_PASSWORD_HASH)
+    user_ok = _safe_equals(username, settings.ADMIN_USERNAME)
+    pass_ok = verify_password(password, _ADMIN_PASSWORD_HASH)  # always runs
+    return user_ok and pass_ok
 
 
 async def require_auth(
@@ -92,26 +71,20 @@ async def require_auth(
     api_key: Optional[str] = Security(api_key_header),
 ) -> str:
     if api_key:
-        if hmac.compare_digest(api_key, settings.API_KEY):
+        if _safe_equals(api_key, settings.API_KEY):
             return 'api-key'
         logger.warning('Invalid API key attempt from %s', request.client.host if request.client else '?')
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail='Invalid API key',
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid API key')
 
     username = parse_session_token(request.cookies.get(COOKIE_NAME))
     if username:
         return username
 
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail='Authentication required',
-    )
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Authentication required')
 
 
 def authenticate_websocket(api_key: str | None, cookie_header: str | None) -> bool:
-    if api_key and hmac.compare_digest(api_key, settings.API_KEY):
+    if api_key and _safe_equals(api_key, settings.API_KEY):
         return True
     if not cookie_header:
         return False

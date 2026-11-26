@@ -63,6 +63,10 @@ class UserRepository:
         await session.flush()
 
         return user
+    
+    
+    
+#from now on these class are for honeypot engine 
 class EventRepository:
     """
     All database operations for security events.

@@ -1,11 +1,17 @@
 # ORM tables: security_events, source_observations, analyst_annotations, audit_log.
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import (
-    Column, String, Float, Integer, DateTime,
-    Text, ForeignKey, Index,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
 )
 from sqlalchemy.orm import relationship
 
@@ -13,7 +19,7 @@ from backend.database.connection import Base
 
 
 def _now():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 class UserModel(Base):
     __tablename__ = 'users'

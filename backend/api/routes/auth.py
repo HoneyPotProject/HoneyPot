@@ -2,7 +2,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
 
 EMAIL_PATTERN = r'^[^@\s]+@[^@\s]+\.[^@\s]+$'
 from backend.api.dependencies import get_db, require_auth
@@ -17,7 +16,6 @@ from backend.database.repository import (
     UserRepository,
 )
 from backend.passwords import hash_password, verify_password
-
 
 router = APIRouter()
 
@@ -83,9 +81,6 @@ async def signup(
 
         await db.flush()
 
-    except Exception:
-        # Let get_db() roll back the transaction.
-        raise
 
     # Record successful registration.
     await SourceRepository.write_audit(

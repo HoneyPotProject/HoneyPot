@@ -5,8 +5,8 @@ import asyncio
 import logging
 import time
 
-from backend.integration.event_sink import BackendEventSink
 from backend.integration.event_mapper import to_db_dict
+from backend.integration.event_sink import BackendEventSink
 
 logger = logging.getLogger(__name__)
 

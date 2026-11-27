@@ -1,6 +1,6 @@
 import asyncio
-from datetime import datetime, timezone
 import uuid
+from datetime import UTC, datetime
 
 from backend.integration.event_sink import BackendEventSink
 from engine.core.detection import AttackCategory, Severity
@@ -11,7 +11,7 @@ def _event() -> SecurityEvent:
     return SecurityEvent(
         event_id=uuid.uuid4(),
         source_ip='1.2.3.4',
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         attack_category=AttackCategory.XSS,
         severity=Severity.LOW,
         confidence=0.4,

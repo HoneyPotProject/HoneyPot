@@ -4,9 +4,10 @@
 import asyncio
 import logging
 
+from engine.events.event import SecurityEvent
+
 # The engine's abstract interface (the only cross-module import from engine).
 from engine.events.storage_interface import EventSink
-from engine.events.event import SecurityEvent
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -17,7 +17,7 @@ class SecurityEventOut(BaseModel):
     target: str
     method: str
     path: str
-    request_id: Optional[str] = None
+    request_id: str | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -31,7 +31,7 @@ class EventListOut(BaseModel):
 
 class AnnotationIn(BaseModel):
     status: str = 'new'
-    notes: Optional[str] = None
+    notes: str | None = None
     analyst_id: str = 'analyst'
 
 
@@ -42,6 +42,6 @@ class AnnotationOut(BaseModel):
     event_id: str
     analyst_id: str
     status: str
-    notes: Optional[str] = None
+    notes: str | None = None
     created_at: datetime
     updated_at: datetime

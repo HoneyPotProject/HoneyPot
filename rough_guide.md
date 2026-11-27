@@ -127,3 +127,6 @@ services/ws_manager.py	Tracks connected clients and broadcasts safely, removing 
 ```
 abcd
 uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
+
+pip install -r requirements.txt
+source .venv/bin/activate

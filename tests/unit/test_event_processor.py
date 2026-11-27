@@ -1,6 +1,6 @@
 import asyncio
+from datetime import UTC, datetime
 from types import MappingProxyType
-from datetime import datetime, timezone
 
 from engine.core.context import RequestContext
 from engine.core.detection import AttackCategory, DetectionResult, Severity
@@ -27,7 +27,7 @@ def test_processor_merges_and_saves():
         query_params=MappingProxyType({}),
         headers=MappingProxyType({}),
         body=b'',
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         request_id='req-1',
     )
     results = [
@@ -51,7 +51,7 @@ def test_processor_skips_empty_results():
         query_params=MappingProxyType({}),
         headers=MappingProxyType({}),
         body=b'',
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         request_id='req-2',
     )
     event = asyncio.get_event_loop().run_until_complete(processor.process(ctx, []))

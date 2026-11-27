@@ -9,13 +9,14 @@ router = APIRouter()
 
 
 async def _collect_status() -> dict:
-    from backend.main import detection_engine, engine_adapter, _honeypot_server
+    from backend.main import _honeypot_server, detection_engine, engine_adapter
     from backend.services.ws_manager import ws_manager
 
     db_status = 'error'
     try:
-        from backend.database.connection import engine as db_engine
         from sqlalchemy import text
+
+        from backend.database.connection import engine as db_engine
         async with db_engine.connect() as conn:
             await conn.execute(text('SELECT 1'))
         db_status = 'ok'

@@ -3,7 +3,7 @@
 import asyncio
 import logging
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 
 from backend.auth import authenticate_websocket
 from backend.services.ws_manager import ws_manager
@@ -27,7 +27,7 @@ async def websocket_events(
         while True:
             try:
                 await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 await websocket.send_json({'type': 'ping'})
             except WebSocketDisconnect:
                 break

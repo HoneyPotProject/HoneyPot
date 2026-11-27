@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -9,7 +8,7 @@ class SourceObservationOut(BaseModel):
     first_seen: datetime
     last_seen: datetime
     total_events: int
-    last_category: Optional[str] = None
+    last_category: str | None = None
     category_counts: dict[str, int] = Field(default_factory=dict)
     severity_counts: dict[str, int] = Field(default_factory=dict)
 

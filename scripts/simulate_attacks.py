@@ -6,7 +6,6 @@ import argparse
 import socket
 import time
 
-
 PAYLOADS = [
     b'GET /login HTTP/1.1\r\nHost: localhost\r\n\r\n',
     b"GET /search?q=1'+OR+1%3D1 HTTP/1.1\r\nHost: localhost\r\n\r\n",

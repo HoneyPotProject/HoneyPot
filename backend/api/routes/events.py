@@ -4,7 +4,6 @@ import csv
 import io
 import json
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -43,12 +42,12 @@ def _decode_event(row) -> dict:
 async def list_events(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
-    source_ip: Optional[str] = Query(None),
-    severity: Optional[str] = Query(None),
-    attack_category: Optional[str] = Query(None),
-    start_time: Optional[datetime] = Query(None),
-    end_time: Optional[datetime] = Query(None),
-    search: Optional[str] = Query(None),
+    source_ip: str | None = Query(None),
+    severity: str | None = Query(None),
+    attack_category: str | None = Query(None),
+    start_time: datetime | None = Query(None),
+    end_time: datetime | None = Query(None),
+    search: str | None = Query(None),
     sort_by: str = Query('timestamp'),
     sort_dir: str = Query('desc'),
     db: AsyncSession = Depends(get_db),
@@ -73,12 +72,12 @@ async def list_events(
 
 @router.get('/api/events/export', tags=['Events'])
 async def export_events(
-    source_ip: Optional[str] = Query(None),
-    severity: Optional[str] = Query(None),
-    attack_category: Optional[str] = Query(None),
-    start_time: Optional[datetime] = Query(None),
-    end_time: Optional[datetime] = Query(None),
-    search: Optional[str] = Query(None),
+    source_ip: str | None = Query(None),
+    severity: str | None = Query(None),
+    attack_category: str | None = Query(None),
+    start_time: datetime | None = Query(None),
+    end_time: datetime | None = Query(None),
+    search: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     _auth=Depends(require_auth),
 ):

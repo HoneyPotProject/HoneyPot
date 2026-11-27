@@ -2,20 +2,19 @@
 
 import json
 import logging
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
-from sqlalchemy import select, func, desc
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.database.models import (
+    AuditLogModel,
     SecurityEventModel,
     SourceObservationModel,
-    AnalystAnnotationModel,
-    AuditLogModel,
     UserModel,
 )
+
 logger = logging.getLogger(__name__)
 
 class UserRepository:
@@ -24,7 +23,7 @@ class UserRepository:
     async def get_by_email(
         session: AsyncSession,
         email: str,
-    ) -> Optional[UserModel]:
+    ) -> UserModel | None:
 
         result = await session.execute(
             select(UserModel).where(
@@ -99,7 +98,7 @@ class EventRepository:
         return row
 
     @staticmethod
-    async def get_by_event_id(session: AsyncSession, event_id: str) -> Optional[SecurityEventModel]:
+    async def get_by_event_id(session: AsyncSession, event_id: str) -> SecurityEventModel | None:
         """Fetch a single event by its UUID."""
         result = await session.execute(
             select(SecurityEventModel)
@@ -193,7 +192,7 @@ class EventRepository:
     @staticmethod
     async def count_last_24h(session: AsyncSession) -> int:
         from datetime import timedelta
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
         result = await session.execute(
             select(func.count(SecurityEventModel.id))
             .where(SecurityEventModel.timestamp >= cutoff)
@@ -220,7 +219,7 @@ class EventRepository:
     ) -> list:
         """Return hourly event counts for the timeline chart."""
         from datetime import timedelta
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=hours)
         query = select(SecurityEventModel.timestamp).where(
             SecurityEventModel.timestamp >= cutoff
         )
@@ -276,7 +275,7 @@ class EventRepository:
     @staticmethod
     async def hourly_activity(session: AsyncSession, hours: int = 24) -> list:
         from datetime import timedelta
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+        cutoff = datetime.now(UTC) - timedelta(hours=hours)
         result = await session.execute(
             select(SecurityEventModel.timestamp)
             .where(SecurityEventModel.timestamp >= cutoff)
@@ -300,7 +299,7 @@ class SourceRepository:
             )
         )
         obs = result.scalar_one_or_none()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if obs is None:
             # First event from this IP.
@@ -342,7 +341,7 @@ class SourceRepository:
         return rows, total
 
     @staticmethod
-    async def get_by_ip(session: AsyncSession, ip: str) -> Optional[SourceObservationModel]:
+    async def get_by_ip(session: AsyncSession, ip: str) -> SourceObservationModel | None:
         result = await session.execute(
             select(SourceObservationModel).where(SourceObservationModel.source_ip == ip)
         )

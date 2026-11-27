@@ -1,11 +1,12 @@
 # GET /api/attackers, GET /api/attackers/{ip}, GET /api/attackers/{ip}/events.
 
 import json
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.dependencies import get_db, require_auth
-from backend.database.repository import SourceRepository, EventRepository
+from backend.database.repository import EventRepository, SourceRepository
 
 router = APIRouter()
 

@@ -1,7 +1,7 @@
-import os
+import base64
 import hashlib
 import hmac
-import base64
+import os
 
 
 def hash_password(password: str) -> str:

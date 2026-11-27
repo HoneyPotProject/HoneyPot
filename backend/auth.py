@@ -7,7 +7,6 @@ import hashlib
 import hmac
 import logging
 import time
-from typing import Optional
 
 from fastapi import HTTPException, Request, Security, status
 from fastapi.security import APIKeyHeader
@@ -42,7 +41,7 @@ def create_session_token(username: str) -> str:
     return f'{payload}|{_sign(payload)}'
 
 
-def parse_session_token(token: str | None) -> Optional[str]:
+def parse_session_token(token: str | None) -> str | None:
     if not token:
         return None
     parts = token.split('|')
@@ -68,7 +67,7 @@ def authenticate_credentials(username: str, password: str) -> bool:
 
 async def require_auth(
     request: Request,
-    api_key: Optional[str] = Security(api_key_header),
+    api_key: str | None = Security(api_key_header),
 ) -> str:
     if api_key:
         if _safe_equals(api_key, settings.API_KEY):

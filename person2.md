@@ -1,19 +1,19 @@
-# Person 2 — Detection Engine (Owner B)
+# Person 2 — Detection Engine & Normalizer (Owner B)
 
-This document contains the complete implementation for **Person 2 — Detection Engine**, including the exact file locations in the repository.
+This document contains the complete implementation for **Person 2 (Owner B)** across Phase 2 and Phase 3, including the exact file locations in the repository.
 
 ---
 
-## Restrictions Checklist
+## Phase 2 — Detection Engine
+
+### Restrictions Checklist
 - No database imports
 - No FastAPI imports
 - No network requests
 - No dashboard/frontend dependencies
 - No actual attack-detection rules implemented
 
----
-
-## 1. `engine/detectors/base.py`
+### 1. `engine/detectors/base.py`
 
 **Actual file location:** `C:\honeypot\HoneyPot\engine\detectors\base.py` (relative path: `engine/detectors/base.py`)
 
@@ -49,9 +49,7 @@ class BaseDetector(ABC):
         """
 ```
 
----
-
-## 2. `engine/core/engine.py`
+### 2. `engine/core/engine.py`
 
 **Actual file location:** `C:\honeypot\HoneyPot\engine\core\engine.py` (relative path: `engine/core/engine.py`)
 
@@ -136,52 +134,124 @@ class DetectionEngine:
 
 ---
 
-## 3. Deliverable Verification (Dummy Detector Example)
+## Phase 3 — Normalizer (`feature/phase3-normalizer`)
 
-You can verify the deliverable by registering a dummy detector and running it through `DetectionEngine`:
+### 3. `engine/core/normalizer.py`
+
+**Actual file location:** `C:\honeypot\HoneyPot\engine\core\normalizer.py` (relative path: `engine/core/normalizer.py`)
 
 ```python
-from datetime import UTC, datetime
+"""Shared input normalization for honeypot detectors."""
 
-from engine.core.context import RequestContext
-from engine.core.detection import AttackCategory, DetectionResult, Severity
-from engine.core.engine import DetectionEngine
-from engine.detectors.base import BaseDetector
+import re
+import unicodedata
+from urllib.parse import unquote, unquote_plus
 
-
-class DummyDetector(BaseDetector):
-    name = "dummy"
-    category = AttackCategory.SUSPICIOUS_REQUEST
-
-    def analyze(self, context: RequestContext) -> list[DetectionResult]:
-        return [
-            DetectionResult(
-                detector=self.name,
-                category=self.category,
-                severity=Severity.LOW,
-                confidence=0.5,
-                reason="Dummy detection for engine verification",
-                evidence=context.path,
-            )
-        ]
+MAX_INPUT_LENGTH = 8_192
+_WHITESPACE_RE = re.compile(r"\s+")
 
 
-engine = DetectionEngine()
-engine.register_detector(DummyDetector())
+def normalize(
+    value: str,
+    *,
+    max_rounds: int = 3,
+    plus_as_space: bool = False,
+) -> str:
+    """Normalize untrusted text into a standard form for pattern matching.
 
-ctx = RequestContext(
-    source_ip="127.0.0.1",
-    method="GET",
-    path="/test",
-    query_params={},
-    headers={"host": "localhost"},
-    body="",
-    timestamp=datetime.now(UTC),
-    request_id="req-001",
-)
+    Steps:
+    1. Bound input length to ``MAX_INPUT_LENGTH`` characters.
+    2. URL-decode repeatedly until stable or ``max_rounds`` is reached.
+    3. Strip null bytes (``\\x00``).
+    4. Apply Unicode NFKC normalization.
+    5. Collapse whitespace runs to a single space and lowercase.
+    6. When ``plus_as_space`` is True, decode ``+`` as space (form data).
 
-results = engine.analyze(ctx)
-print(results)
+    Never resolves ``..``, never raises on strange input, and performs no I/O.
+    """
+    if not value:
+        return ""
+    if not isinstance(value, str):
+        value = str(value)
+
+    text = value[:MAX_INPUT_LENGTH]
+
+    decoder = unquote_plus if plus_as_space else unquote
+    for _ in range(max(0, max_rounds)):
+        decoded = decoder(text)
+        if decoded == text:
+            break
+        text = decoded
+
+    text = text.replace("\x00", "")
+    text = unicodedata.normalize("NFKC", text)
+    text = _WHITESPACE_RE.sub(" ", text).lower()
+    return text
 ```
 
-> **Note:** In `tests/engine/test_detector_base.py` and `tests/engine/test_engine.py`, the test suite already validates `BaseDetector` abstractness, `DetectionEngine.register_detector`, duplicate/type validation, `enabled` toggling, `detection_count` tracking, and crash isolation.
+### 4. `tests/engine/test_normalizer.py`
+
+**Actual file location:** `C:\honeypot\HoneyPot\tests\engine\test_normalizer.py` (relative path: `tests/engine/test_normalizer.py`)
+
+```python
+import time
+
+from engine.core.normalizer import MAX_INPUT_LENGTH, normalize
+
+
+def test_single_and_double_url_decoding():
+    assert normalize("%2e%2e%2f") == "../"
+    assert normalize("%252e%252e%252f") == "../"
+
+
+def test_round_limit_stops_deep_encoding():
+    # 10-times URL-encoded "." (%2e -> %252e -> ... -> %25...2e)
+    encoded = "."
+    for _ in range(10):
+        encoded = encoded.replace("%", "%25").replace(".", "%2e")
+
+    result = normalize(encoded, max_rounds=3)
+    assert result != "."
+    assert "%" in result
+
+
+def test_null_bytes_removed():
+    assert normalize("admin\x00.php") == "admin.php"
+    assert normalize("admin%00.php") == "admin.php"
+    assert normalize("admin%2500.php") == "admin.php"
+
+
+def test_unicode_nfkc_fullwidth_slash():
+    assert normalize("\uff0fetc\uff0fpasswd") == "/etc/passwd"
+
+
+def test_lowercase_and_whitespace_collapsed():
+    assert normalize("UNION   \t\n  SELECT   1") == "union select 1"
+
+
+def test_plus_as_space():
+    assert normalize("select+1+from+users", plus_as_space=False) == "select+1+from+users"
+    assert normalize("select+1+from+users", plus_as_space=True) == "select 1 from users"
+
+
+def test_dot_dot_preserved():
+    assert normalize("/static/../../etc/passwd") == "/static/../../etc/passwd"
+    assert normalize("%2e%2e/%2e%2e/etc/passwd") == "../../etc/passwd"
+
+
+def test_empty_string_and_strange_inputs():
+    assert normalize("") == ""
+    assert normalize("%ZZ%invalid%") == "%zz%invalid%"
+    assert normalize(None) == ""  # type: ignore[arg-type]
+
+
+def test_huge_input_bounded_and_fast():
+    huge = "A" * 1_000_000
+    start = time.perf_counter()
+    result = normalize(huge)
+    elapsed = time.perf_counter() - start
+
+    assert len(result) == MAX_INPUT_LENGTH
+    assert result == "a" * MAX_INPUT_LENGTH
+    assert elapsed < 0.5
+```

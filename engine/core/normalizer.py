@@ -5,7 +5,7 @@ from engine.core.config import EngineConfig
 
 _DEFAULT_CONFIG = EngineConfig()
 
- 
+
 def normalize(text: str, config: EngineConfig = _DEFAULT_CONFIG) -> str:
     """Decode, clean and lowercase untrusted text.
 
@@ -19,7 +19,7 @@ def normalize(text: str, config: EngineConfig = _DEFAULT_CONFIG) -> str:
     result = text
     for _ in range(config.max_decode_rounds):
         decoded = unquote(result)
-        if decoded == result:      # nothing changed, stop early
+        if decoded == result:  # nothing changed, stop early
             break
         result = decoded
 

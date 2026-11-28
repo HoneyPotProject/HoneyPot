@@ -14,8 +14,16 @@ def run(context, path):
 
 @pytest.mark.parametrize(
     "path",
-    ["/.env", "/.git/config", "/phpmyadmin", "/backup.zip", "/ADMIN",
-     "/%2eenv", "/.env?x=1", "/admin/"],
+    [
+        "/.env",
+        "/.git/config",
+        "/phpmyadmin",
+        "/backup.zip",
+        "/ADMIN",
+        "/%2eenv",
+        "/.env?x=1",
+        "/admin/",
+    ],
 )
 def test_sensitive_paths_detected(context, path):
     assert len(run(context, path)) >= 1

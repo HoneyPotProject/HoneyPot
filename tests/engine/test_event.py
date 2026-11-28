@@ -3,9 +3,21 @@ import dataclasses
 from engine.events.event import SecurityEvent
 
 EXPECTED = {
-    "event_id", "source_ip", "timestamp", "attack_category", "severity",
-    "confidence", "detection_reasons", "evidence", "target", "method",
-    "path", "request_id", "detector_names", "related_results", "metadata",
+    "event_id",
+    "source_ip",
+    "timestamp",
+    "attack_category",
+    "severity",
+    "confidence",
+    "detection_reasons",
+    "evidence",
+    "target",
+    "method",
+    "path",
+    "request_id",
+    "detector_names",
+    "related_results",
+    "metadata",
 }
 
 

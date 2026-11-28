@@ -1,43 +1,76 @@
-"""Central engine settings. Detectors read from here; they never hardcode limits."""
+"""Detection engine that registers detectors and runs them safely."""
 
-from dataclasses import dataclass
+import logging
+
+from engine.core.context import RequestContext
+from engine.core.detection import DetectionResult
+from engine.detectors.base import BaseDetector
+
+logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
-class EngineConfig:
-    # Request limits (used later by the listener/collector)
-    max_body_bytes: int = 16_384
-    max_header_bytes: int = 8_192
-    max_header_count: int = 64
-    max_url_length: int = 2_048
-    request_timeout_seconds: float = 10.0
-    max_connections: int = 100
+class DetectionEngine:
+    """Executes registered detectors against a RequestContext with fault isolation."""
 
-    # Normalizer
-    max_decode_rounds: int = 3
+    def __init__(self) -> None:
+        self._detectors: dict[str, BaseDetector] = {}
 
-    # Bounded memory for stateful detectors
-    max_tracked_sources: int = 10_000
-    max_entries_per_source: int = 200
+    @property
+    def detectors(self) -> list[BaseDetector]:
+        """Return a snapshot list of all registered detectors in registration order."""
+        return list(self._detectors.values())
 
-    # Endpoint enumeration (starting values from the guide)
-    endpoint_enum_distinct_paths: int = 15
-    endpoint_enum_window_seconds: int = 60
-    endpoint_enum_error_count: int = 10
-    endpoint_enum_error_window_seconds: int = 30
+    def register_detector(self, detector: BaseDetector) -> None:
+        """Register a BaseDetector instance.
 
-    # Brute force
-    brute_force_attempts: int = 5
-    brute_force_window_seconds: int = 60
+        Raises:
+            TypeError: If ``detector`` is not an instance of ``BaseDetector``.
+            ValueError: If a detector with the same ``name`` is already registered.
+        """
+        if not isinstance(detector, BaseDetector):
+            raise TypeError(
+                f"Expected a BaseDetector instance, got {type(detector).__name__}"
+            )
+        if not getattr(detector, "name", None):
+            raise ValueError("Detector must define a non-empty 'name' attribute")
+        if detector.name in self._detectors:
+            raise ValueError(
+                f"Detector with name {detector.name!r} is already registered"
+            )
+        self._detectors[detector.name] = detector
 
-    # Port scan
-    port_scan_distinct_ports: int = 5
-    port_scan_window_seconds: int = 30
+    def unregister_detector(self, name: str) -> None:
+        """Remove a registered detector by name if present."""
+        self._detectors.pop(name, None)
 
-    # Sessions
-    session_idle_gap_seconds: int = 1_800
+    def get_detector(self, name: str) -> BaseDetector | None:
+        """Return a registered detector by name, or None if not found."""
+        return self._detectors.get(name)
 
-    def __post_init__(self) -> None:
-        for name, value in self.__dict__.items():
-            if isinstance(value, (int, float)) and value <= 0:
-                raise ValueError(f"{name} must be greater than 0")
+    def analyze(self, context: RequestContext) -> list[DetectionResult]:
+        """Run all enabled detectors against ``context`` and collect results.
+
+        If a detector raises an exception, the failure is logged and isolated
+        so remaining detectors continue to run.
+        """
+        collected: list[DetectionResult] = []
+
+        for detector in self._detectors.values():
+            if not detector.enabled:
+                continue
+
+            try:
+                results = detector.analyze(context)
+            except Exception:
+                logger.exception(
+                    "Detector %r failed while analyzing request_id=%s",
+                    detector.name,
+                    getattr(context, "request_id", "unknown"),
+                )
+                continue
+
+            if results:
+                detector.detection_count += len(results)
+                collected.extend(results)
+
+        return collected

@@ -28,15 +28,11 @@ class DetectionEngine:
             ValueError: If a detector with the same ``name`` is already registered.
         """
         if not isinstance(detector, BaseDetector):
-            raise TypeError(
-                f"Expected a BaseDetector instance, got {type(detector).__name__}"
-            )
+            raise TypeError(f"Expected a BaseDetector instance, got {type(detector).__name__}")
         if not getattr(detector, "name", None):
             raise ValueError("Detector must define a non-empty 'name' attribute")
         if detector.name in self._detectors:
-            raise ValueError(
-                f"Detector with name {detector.name!r} is already registered"
-            )
+            raise ValueError(f"Detector with name {detector.name!r} is already registered")
         self._detectors[detector.name] = detector
 
     def unregister_detector(self, name: str) -> None:
